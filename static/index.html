@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080d16">
+<title>TRUST-TWIN | Sensor Intelligence</title>
+<style>
+:root {
+  color-scheme: dark;
+  --bg:#080d16; --panel:#101927; --panel2:#0c1420;
+  --line:#223249; --text:#e8f0fa; --muted:#8799b0;
+  --cyan:#52d8f5; --green:#57e3a0; --amber:#ffca72;
+  --red:#ff7185; --purple:#b9a0ff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 50% -20%,#17314a 0,transparent 55%),var(--bg);color:var(--text);font:14px/1.5 Inter,Segoe UI,Arial,sans-serif}
+button,select{font:inherit}
+button,select{background:#111e2d;border:1px solid #30435a;color:var(--text);border-radius:8px;padding:10px 12px}
+button{cursor:pointer;transition:.2s}
+button:hover{border-color:var(--cyan);transform:translateY(-1px)}
+button:disabled{opacity:.5;cursor:wait}
+#liveToggle.active {
+  color: var(--green);
+  border-color: var(--green);
+  background: #10271f;
+}
+.live-indicator {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--muted);
+  margin-right: 6px;
+}
+.live-indicator.active {
+  background: var(--green);
+  box-shadow: 0 0 10px #57e3a080;
+  animation: pulse 1.5s infinite;
+}
+.topbar{position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 4%;background:#080d16ed;border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}
+.brand{display:flex;align-items:center;gap:12px}
+.logo{width:42px;height:42px;border:1px solid #35718c;border-radius:12px;display:grid;place-items:center;color:var(--cyan);font-weight:900;font-size:19px;background:#102638}
+.brand h1{font-size:16px;letter-spacing:2px;margin:0}
+.brand p{margin:2px 0 0;color:var(--muted);font-size:11px;letter-spacing:1.4px}
+.top-right{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.pill{border:1px solid var(--line);border-radius:30px;padding:6px 10px;color:var(--muted);font-size:11px;white-space:nowrap}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--green);margin-right:7px;box-shadow:0 0 12px #57e3a080}
+main{max-width:1500px;margin:auto;padding:25px 4% 40px}
+.eyebrow{color:var(--cyan);font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
+.hero{display:flex;justify-content:space-between;align-items:end;gap:20px;margin-bottom:22px}
+.hero h2{font-size:clamp(25px,3vw,38px);letter-spacing:-1px;margin:6px 0}
+.hero p{color:var(--muted);margin:0;max-width:700px}
+.actions{display:flex;gap:9px;flex-wrap:wrap}
+.primary{background:var(--cyan);color:#06121b;border-color:var(--cyan);font-weight:800}
+.primary:hover{background:#a1efff}
+.grid{display:grid;gap:14px}
+.kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:15px}
+.panel,.kpi{background:linear-gradient(145deg,#111c2b,#0d1521);border:1px solid var(--line);border-radius:13px;min-width:0}
+.kpi{padding:17px;position:relative;overflow:hidden}
+.kpi:after{content:"";position:absolute;right:-25px;top:-30px;width:90px;height:90px;border:1px solid #52d8f51c;border-radius:50%}
+.kpi .label{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1.2px}
+.kpi .value{font-size:clamp(22px,2.5vw,31px);font-weight:750;letter-spacing:-1px;margin:8px 0 2px;font-variant-numeric:tabular-nums}
+.kpi .sub{color:var(--muted);font-size:11px}
+.cyan{color:var(--cyan)}.green{color:var(--green)}.amber{color:var(--amber)}.red{color:var(--red)}.purple{color:var(--purple)}
+.layout{grid-template-columns:minmax(0,1.55fr) minmax(300px,1fr);align-items:start}
+.panel{padding:19px;margin-bottom:15px}
+.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px}
+.panel-head h3{font-size:14px;margin:0;font-weight:700}
+.panel-head p{color:var(--muted);font-size:11px;margin:3px 0 0}
+.tag{font-size:10px;padding:5px 8px;border:1px solid var(--line);border-radius:5px;color:var(--muted);white-space:nowrap}
+.sensor-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.sensor{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:14px;min-width:0;transition:border-color .25s}
+.sensor.fault{border-color:var(--red);box-shadow:inset 0 0 20px #ff71850b}
+.sensor-top{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.sensor-name{font-size:11px;color:var(--muted)}
+.sensor-icon{color:var(--cyan);font-size:12px}
+.temp{font-size:clamp(23px,2.5vw,31px);font-weight:750;margin:12px 0 0;font-variant-numeric:tabular-nums;white-space:nowrap}
+.unit{font-size:13px;color:var(--muted);font-weight:400}
+.sensor-foot{display:flex;justify-content:space-between;gap:5px;color:var(--muted);font-size:10px;margin-top:5px}
+.meter{height:4px;background:#243246;border-radius:5px;overflow:hidden;margin-top:12px}
+.meter span{height:100%;display:block;width:50%;background:var(--cyan);border-radius:5px;transition:width .4s,background .4s}
+.sensor.fault .meter span{background:var(--red)}
+.chart-wrap{height:220px;position:relative}
+canvas{width:100%;height:100%;display:block}
+.chart-legend{display:flex;gap:15px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-top:10px}
+.legend-dot{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:6px}
+.control-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px}
+select{width:100%;min-width:0}
+.status-box{border:1px solid var(--line);background:#0a121e;border-radius:10px;padding:15px;margin-top:12px}
+.status-title{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:800}
+.status-light{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 13px currentColor}
+.status-box p{color:#a9b8c9;margin:9px 0 0;font-size:12px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #1b2a3c;font-size:12px}
+.stat-row:last-child{border-bottom:0}
+.stat-row span:first-child{color:var(--muted)}
+.prob-row{margin:13px 0}
+.prob-label{display:flex;justify-content:space-between;gap:10px;font-size:11px;margin-bottom:6px}
+.prob-label span:first-child{color:#c7d4e3}
+.prob-track{height:6px;background:#243246;border-radius:8px;overflow:hidden}
+.prob-track span{display:block;height:100%;background:linear-gradient(90deg,#287fbd,var(--cyan));border-radius:8px;transition:width .4s}
+.events{max-height:300px;overflow:auto}
+.event{display:grid;grid-template-columns:7px minmax(0,1fr) auto;gap:10px;padding:12px 0;border-bottom:1px solid #1b2a3c;align-items:start}
+.event:last-child{border-bottom:0}
+.event-mark{width:7px;height:7px;border-radius:50%;background:var(--green);margin-top:5px}
+.event-mark.warn{background:var(--amber)}.event-mark.bad{background:var(--red)}
+.event strong{font-size:11px;display:block}
+.event p{font-size:11px;color:var(--muted);margin:3px 0 0;overflow-wrap:anywhere}
+.event time{font-size:10px;color:var(--muted);white-space:nowrap}
+.empty{font-size:12px;color:var(--muted);padding:15px 0}
+.footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:10px;border-top:1px solid var(--line);padding-top:15px;margin-top:5px}
+.notice{color:var(--amber);font-size:10px;letter-spacing:.3px}
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+@media(max-width:950px){.layout{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.topbar{padding:12px 4%}.top-right{gap:7px}.pill{font-size:10px}.hero{align-items:start;flex-direction:column}.sensor-grid{grid-template-columns:1fr}.sensor{display:grid;grid-template-columns:1fr auto;align-items:center}.sensor .temp{grid-column:2;grid-row:1/4;margin:0}.sensor .meter{grid-column:1}.sensor-foot{grid-column:1}.kpi{padding:13px}.panel{padding:14px}.control-row{grid-template-columns:1fr}.chart-wrap{height:190px}}
+
+/* TRUST-TWIN RESPONSIVE DESIGN SYSTEM V2 */
+:root {
+  --bg: #080d16;
+  --panel: #101927;
+  --panel2: #0c1420;
+  --line: #26384e;
+  --text: #edf4fc;
+  --muted: #a0b0c4;
+  --cyan: #52d8f5;
+  --green: #57e3a0;
+  --amber: #ffca72;
+  --red: #ff7185;
+  --purple: #b9a0ff;
+}
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+body {
+  min-height: 100vh;
+  width: 100%;
+  font-size: 14px;
+  line-height: 1.55;
+  letter-spacing: .01em;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, select {
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 42px;
+}
+button:focus-visible, select:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 3px;
+}
+.topbar {
+  width: 100%;
+  min-height: 72px;
+  padding: 12px clamp(20px, 3.5vw, 56px);
+}
+.brand { flex-shrink: 0; }
+.brand h1 {
+  font-size: 17px;
+  letter-spacing: 2.2px;
+}
+.brand p {
+  font-size: 11px;
+  letter-spacing: 1.3px;
+}
+.top-right { justify-content: flex-end; gap: 10px; }
+.pill { font-size: 11px; padding: 7px 11px; }
+main {
+  display: block;
+  width: 100%;
+  max-width: 1680px;
+  margin: 0 auto;
+  padding: 32px clamp(20px, 3.5vw, 56px) 36px;
+}
+.hero {
+  width: 100%;
+  align-items: center;
+  gap: 28px;
+  margin-bottom: 26px;
+}
+.hero > div:first-child { min-width: 0; }
+.hero h2 {
+  font-size: clamp(30px, 2.5vw, 40px);
+  line-height: 1.2;
+  letter-spacing: -1.15px;
+  margin: 9px 0 10px;
+}
+.hero p {
+  max-width: 720px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 1.8px;
+}
+.actions { flex-shrink: 0; gap: 10px; }
+.grid { gap: 18px; }
+.kpis {
+  width: 100%;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.kpi {
+  min-height: 122px;
+  padding: 20px;
+  border-radius: 14px;
+}
+.kpi .label {
+  font-size: 11px;
+  letter-spacing: 1.15px;
+  line-height: 1.5;
+}
+.kpi .value {
+  font-size: clamp(23px, 2vw, 32px);
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  margin: 10px 0 5px;
+}
+.kpi .sub { font-size: 12px; line-height: 1.5; }
+.layout {
+  width: 100%;
+  grid-template-columns: minmax(0, 1.45fr) minmax(360px, .95fr);
+  align-items: start;
+  gap: 18px;
+}
+.layout > section,
+.layout > aside { min-width: 0; width: 100%; }
+.panel {
+  width: 100%;
+  min-width: 0;
+  padding: 22px;
+  margin-bottom: 18px;
+  border-radius: 14px;
+}
+.panel-head {
+  align-items: center;
+  margin-bottom: 19px;
+  gap: 14px;
+}
+.panel-head h3 {
+  font-size: 15px;
+  line-height: 1.4;
+  letter-spacing: -.1px;
+}
+.panel-head p {
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 5px;
+}
+.tag {
+  font-size: 10px;
+  padding: 6px 9px;
+  letter-spacing: .3px;
+}
+.sensor-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 13px;
+}
+.sensor {
+  min-width: 0;
+  padding: 17px;
+  border-radius: 11px;
+}
+.sensor-name { font-size: 11px; letter-spacing: .7px; }
+.sensor-icon { font-size: 15px; }
+.temp {
+  font-size: clamp(25px, 2.2vw, 34px);
+  line-height: 1.25;
+  letter-spacing: -.8px;
+  margin-top: 14px;
+}
+.unit { font-size: 13px; letter-spacing: 0; }
+.sensor-foot { font-size: 11px; margin-top: 8px; }
+.meter { height: 5px; margin-top: 13px; }
+.chart-wrap { width: 100%; height: clamp(220px, 24vw, 310px); }
+.chart-legend { gap: 17px; font-size: 11px; margin-top: 13px; }
+.control-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: stretch;
+  gap: 10px;
+}
+select { min-width: 0; width: 100%; }
+.status-box { padding: 17px; margin-top: 15px; }
+.status-title { font-size: 14px; line-height: 1.5; }
+.status-box p { font-size: 13px; line-height: 1.7; }
+.stat-row {
+  min-height: 43px;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.stat-row span:first-child { min-width: 0; }
+.stat-row b { text-align: right; overflow-wrap: anywhere; }
+.prob-row { margin: 16px 0; }
+.prob-label { font-size: 12px; gap: 12px; line-height: 1.5; }
+.prob-label span:first-child { min-width: 0; }
+.prob-label b { white-space: nowrap; }
+.prob-track { height: 7px; }
+.events { max-height: 360px; }
+.event {
+  gap: 12px;
+  padding: 14px 0;
+  grid-template-columns: 8px minmax(0, 1fr) auto;
+}
+.event strong { font-size: 12px; line-height: 1.5; }
+.event p { font-size: 12px; line-height: 1.6; }
+.event time { font-size: 11px; }
+.empty { font-size: 13px; line-height: 1.7; }
+.notice { font-size: 11px; line-height: 1.6; margin-top: 17px; }
+.footer {
+  width: 100%;
+  padding-top: 19px;
+  margin-top: 12px;
+  font-size: 11px;
+  line-height: 1.7;
+  gap: 12px 22px;
+}
+#deviationRows .stat-row { padding: 12px 0; }
+#deviationRows .meter { margin-bottom: 13px !important; }
+#mlContent { min-width: 0; overflow-wrap: anywhere; }
+#mlContent pre { font-size: 12px !important; line-height: 1.6; }
+
+@media (min-width: 1500px) {
+  main { padding-top: 38px; }
+  .layout { grid-template-columns: minmax(0, 1.5fr) minmax(390px, .9fr); }
+  .panel { padding: 25px; }
+  .kpi { padding: 23px; }
+}
+@media (max-width: 1100px) {
+  main { padding: 26px 24px 32px; }
+  .layout { grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr); gap: 14px; }
+  .panel { padding: 17px; }
+  .sensor-grid { gap: 9px; }
+  .sensor { padding: 12px; }
+  .temp { font-size: 25px; }
+  .kpi { padding: 15px; }
+  .hero { align-items: flex-start; }
+}
+@media (max-width: 800px) {
+  .topbar { align-items: flex-start; flex-wrap: wrap; }
+  .top-right { width: 100%; justify-content: flex-start; }
+  .hero { flex-direction: column; align-items: stretch; }
+  .actions { flex-wrap: wrap; }
+  .actions button { flex: 1; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  .layout > section, .layout > aside { min-width: 0; }
+  .sensor-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .chart-wrap { height: 240px; }
+}
+@media (max-width: 520px) {
+  main { padding: 22px 14px 26px; }
+  .topbar { padding: 12px 14px; }
+  .brand h1 { font-size: 15px; }
+  .brand p { font-size: 9px; }
+  .top-right { gap: 7px; }
+  .pill { font-size: 10px; padding: 6px 8px; }
+  .hero h2 { font-size: 29px; }
+  .hero p { font-size: 13px; }
+  .kpi { min-height: 112px; padding: 13px; }
+  .kpi .label { font-size: 10px; }
+  .kpi .value { font-size: 22px; }
+  .kpi .sub { font-size: 11px; }
+  .panel { padding: 15px; margin-bottom: 14px; }
+  .panel-head { align-items: flex-start; }
+  .panel-head h3 { font-size: 14px; }
+  .panel-head p { font-size: 11px; }
+  .sensor-grid { grid-template-columns: minmax(0, 1fr); }
+  .sensor {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0 10px;
+    padding: 14px;
+  }
+  .sensor .temp { grid-column: 2; grid-row: 1 / 4; font-size: 27px; margin: 0; }
+  .sensor-foot { grid-column: 1; }
+  .sensor .meter { grid-column: 1; }
+  .control-row { grid-template-columns: minmax(0, 1fr); }
+  .chart-wrap { height: 210px; }
+  .footer { flex-direction: column; }
+  .event { grid-template-columns: 7px minmax(0,1fr); }
+  .event time { grid-column: 2; }
+}
+
+
+/* TRUST-TWIN FINAL VISUAL POLISH V3 */
+.kpis { align-items: stretch; }
+.kpi {
+  min-width: 0;
+  min-height: 128px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.kpi .label { min-height: 18px; }
+.kpi .value {
+  width: 100%;
+  font-size: clamp(21px, 1.65vw, 28px);
+  line-height: 1.28;
+  letter-spacing: -.55px;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+#kStatus {
+  font-size: clamp(17px, 1.35vw, 22px);
+  letter-spacing: -.35px;
+  line-height: 1.3;
+}
+#kML { font-size: clamp(18px, 1.45vw, 23px) !important; }
+.kpi .sub {
+  margin-top: auto;
+  padding-top: 7px;
+}
+.panel, .kpi, .sensor {
+  box-shadow: 0 7px 22px #00000012;
+}
+.panel-head { min-width: 0; }
+.panel-head > * { min-width: 0; }
+.tag { flex-shrink: 0; }
+.sensor { min-height: 136px; }
+.sensor .temp { white-space: nowrap; }
+.sensor-foot { align-items: center; }
+.sensor-foot b { font-variant-numeric: tabular-nums; }
+.status-box { border-left: 3px solid var(--cyan); }
+.status-title { overflow-wrap: anywhere; }
+.stat-row { font-variant-numeric: tabular-nums; }
+#assessment { overflow-wrap: anywhere; }
+.prob-label { align-items: baseline; }
+.prob-label span { overflow-wrap: anywhere; }
+.event strong { letter-spacing: .1px; }
+#chart { display: block; }
+button, select { letter-spacing: .05px; }
+button.primary { font-weight: 750; }
+.footer { color: #9bacc1; }
+
+@media (min-width: 801px) {
+  .layout { grid-template-columns: minmax(0, 1.45fr) minmax(370px, .95fr); }
+  .layout > section, .layout > aside { min-width: 0; }
+}
+@media (max-width: 1100px) and (min-width: 801px) {
+  .layout { grid-template-columns: minmax(0, 1.15fr) minmax(320px, 1fr); }
+  #kStatus { font-size: 17px; }
+  .kpi { min-height: 124px; }
+}
+@media (max-width: 800px) {
+  #kStatus { font-size: clamp(17px, 3vw, 22px); }
+  .kpi { min-height: 116px; }
+}
+@media (max-width: 520px) {
+  .kpi { min-height: 110px; }
+  #kStatus { font-size: 17px; }
+  .sensor { min-height: 118px; }
+}
+
+
+/* TRUST-TWIN TYPOGRAPHY AND SPACING V4 */
+:root {
+  --tt-font-body: 14px;
+  --tt-font-muted: 12px;
+  --tt-panel-padding: 20px;
+  --tt-panel-gap: 16px;
+}
+html { font-size: 14px; }
+body {
+  font-size: var(--tt-font-body);
+  line-height: 1.55;
+}
+h1, .page-title {
+  font-size: clamp(28px, 2.2vw, 34px);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+h2 { font-size: 19px; line-height: 1.35; }
+h3 { font-size: 16px; line-height: 1.4; }
+p { line-height: 1.6; }
+button, input, select, textarea { font: inherit; }
+button { min-height: 38px; }
+small, .tag, .badge {
+  font-size: 11px;
+  line-height: 1.45;
+}
+.panel {
+  padding: var(--tt-panel-padding);
+  border-radius: 14px;
+}
+.panel h3 { margin-bottom: 5px; }
+.panel p { font-size: 12px; }
+canvas {
+  max-width: 100%;
+}
+#ttDigitalTwin,
+#ttDiagnosticsPanel,
+#trustTwinAlertHistory {
+  font-size: 14px;
+  line-height: 1.55;
+}
+#ttDigitalTwin h2,
+#ttDiagnosticsPanel h2,
+#trustTwinAlertHistory h2 {
+  font-size: 19px;
+}
+#ttDigitalTwin button,
+#ttDiagnosticsPanel button,
+#trustTwinAlertHistory button {
+  font-size: 13px;
+}
+@media (min-width: 1500px) {
+  .container, main, .dashboard {
+    max-width: 1440px;
+  }
+}
+@media (max-width: 900px) {
+  :root { --tt-panel-padding: 16px; }
+  h1, .page-title { font-size: 28px; }
+  h2 { font-size: 18px; }
+}
+@media (max-width: 600px) {
+  :root {
+    --tt-font-body: 13px;
+    --tt-panel-padding: 13px;
+    --tt-panel-gap: 12px;
+  }
+  h1, .page-title { font-size: 25px; }
+  h2 { font-size: 17px; }
+  h3 { font-size: 15px; }
+}
+\n
+/* TRUST-TWIN SINGLE-LETTER BRAND MARK */
+.logo {
+  position: relative;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  overflow: hidden;
+}
+.logo .logo-t {
+  font-size: 19px;
+  line-height: 1;
+}
+.logo .logo-slash {
+  display: none;
+}
+
+
+/* TRUST-TWIN LAYOUT REFINEMENT V5 */
+main {
+  width: min(1500px, 94vw) !important;
+  margin-inline: auto !important;
+}
+.hero {
+  gap: 24px;
+  margin-bottom: 24px;
+}
+.kpis {
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.kpi {
+  min-height: 120px;
+}
+.layout {
+  gap: 18px;
+  align-items: start;
+}
+.panel {
+  min-width: 0;
+}
+.sensor-grid {
+  gap: 12px;
+}
+.sensor {
+  min-width: 0;
+}
+.chart-wrap {
+  min-height: 250px;
+  height: 290px;
+}
+@media (min-width: 1500px) {
+  main {
+    width: min(1540px, 94vw) !important;
+  }
+}
+@media (max-width: 950px) {
+  main { width: 94vw !important; }
+  .chart-wrap { height: 250px; }
+}
+@media (max-width: 600px) {
+  main { width: 94vw !important; }
+  .kpis { gap: 10px; }
+  .chart-wrap { height: 220px; }
+}
+\n
+/* TRUST-TWIN LOWER DASHBOARD BALANCE V6 */
+.layout {
+  align-items: stretch;
+  gap: 18px;
+}
+.layout > * {
+  min-width: 0;
+}
+.panel {
+  min-width: 0;
+}
+#temporalPanel {
+  padding-bottom: 16px;
+}
+#temporalPanel .stat-row {
+  padding-block: 10px;
+}
+#trustTwinAlertHistory {
+  min-height: 220px;
+}
+#trustTwinAlertList {
+  max-height: 440px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+#trustTwinAlertList > div {
+  padding: 12px !important;
+}
+#ttDiagnosticsPanel {
+  margin-top: 18px;
+}
+@media (min-width: 951px) {
+  .layout {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+@media (max-width: 950px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #trustTwinAlertList {
+    max-height: 300px;
+  }
+}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <div class="logo"><span class="logo-t">T</span><span class="cyan logo-slash">/</span></div>
+    <div><h1>TRUST-TWIN</h1><p>SENSOR INTELLIGENCE SYSTEM</p></div>
+  </div>
+  <div class="top-right">
+    <span class="pill"><span class="dot pulse" id="healthDot"></span><span id="connection">CONNECTING</span></span>
+    <span class="pill">IBM LinuxONE · s390x</span>
+    <span class="pill" id="clock">--:--:--</span>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div>
+      <div class="eyebrow">Operations / Telemetry / 01</div>
+      <h2>Sensor command center<span class="cyan">.</span></h2>
+      <p>Multi-sensor consensus, anomaly detection, and AI-assisted telemetry assessment in one operational view.</p>
+    </div>
+    <div class="actions">
+      <button id="refresh">↻ Refresh telemetry</button>
+      <button id="liveToggle">▶ Start live mode</button>
+      <button id="resetDemo">↺ Reset demo</button>
+      <button class="primary" id="run">▶ Run analysis</button>
+    </div>
+  </section>
+
+  <section class="grid kpis">
+    <div class="kpi"><div class="label">System status</div><div class="value green" id="kStatus">STANDBY</div><div class="sub" id="statusSub">Awaiting analysis</div></div>
+    <div class="kpi"><div class="label">Consensus temperature</div><div class="value" id="kTemp">--.-<span class="unit"> °C</span></div><div class="sub">Median across three sensors</div></div>
+    <div class="kpi"><div class="label">Sensors flagged</div><div class="value" id="kFlagged">0 / 3</div><div class="sub">Deviation-based assessment</div></div>
+    <div class="kpi"><div class="label">ML assessment</div><div class="value purple" id="kML">PENDING</div><div class="sub" id="mlSub">Model status unknown</div></div>
+  </section>
+
+  <div class="grid layout">
+    <section>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Sensor telemetry</h3><p>Three independent simulated temperature channels</p></div><span class="tag" id="sampleTag"><span class="live-indicator" id="liveDot"></span>NO SAMPLE</span></div>
+        <div class="grid sensor-grid">
+          <div class="sensor" id="cardA"><div class="sensor-top"><span class="sensor-name">CHANNEL A</span><span class="sensor-icon">◈</span></div><div class="temp" id="tempA">--.-<span class="unit"> °C</span></div><div class="sensor-foot"><span>Trust score</span><b id="trustA">--%</b></div><div class="meter"><span id="barA"></span></div></div>
+          <div class="sensor" id="cardB"><div class="sensor-top"><span class="sensor-name">CHANNEL B</span><span class="sensor-icon">◈</span></div><div class="temp" id="tempB">--.-<span class="unit"> °C</span></div><div class="sensor-foot"><span>Trust score</span><b id="trustB">--%</b></div><div class="meter"><span id="barB"></span></div></div>
+          <div class="sensor" id="cardC"><div class="sensor-top"><span class="sensor-name">CHANNEL C</span><span class="sensor-icon">◈</span></div><div class="temp" id="tempC">--.-<span class="unit"> °C</span></div><div class="sensor-foot"><span>Trust score</span><b id="trustC">--%</b></div><div class="meter"><span id="barC"></span></div></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h3>Telemetry trend</h3><p>Recent analysis samples · temperature in °C</p></div><span class="tag">A / B / C</span></div>
+        <div class="chart-wrap"><canvas id="chart" aria-label="Temperature trend chart"></canvas></div>
+        <div class="chart-legend">
+          <span><i class="legend-dot" style="background:#52d8f5"></i>Channel A</span>
+          <span><i class="legend-dot" style="background:#ffca72"></i>Channel B</span>
+          <span><i class="legend-dot" style="background:#b9a0ff"></i>Channel C</span>
+          <span id="chartHint">Waiting for samples</span>
+        </div>
+      </div>
+
+      <div class="panel" id="temporalPanel">
+        <div class="panel-head">
+          <div>
+            <h3>Temporal sensor integrity</h3>
+            <p>Consecutive samples used to assess a possible frozen channel</p>
+          </div>
+          <span class="tag" id="temporalBadge">AWAITING SAMPLES</span>
+        </div>
+        <div class="stat-row">
+          <span>Frozen-sensor assessment</span>
+          <b id="temporalStatus">Not assessed</b>
+        </div>
+        <div class="stat-row">
+          <span>Consecutive samples</span>
+          <b id="temporalCount">0 / 4</b>
+        </div>
+        <div class="meter"><span id="temporalProgress" style="width:0%"></span></div>
+        <p id="temporalEvidence" class="empty">
+          Select Frozen sensor simulation and execute at least four consecutive samples to evaluate temporal stability.
+        </p>
+        <p class="notice">Heuristic for simulated data only; not proof of a physical sensor failure.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h3>Sensor deviation matrix</h3><p>Absolute difference from median consensus</p></div><span class="tag">THRESHOLD 8°C</span></div>
+        <div id="deviationRows"><div class="empty">Run an analysis to populate the matrix.</div></div>
+      </div>
+    </section>
+
+    <aside>
+      <div class="panel">
+        <div class="panel-head"><div><h3>Mission controls</h3><p>Select a simulated test scenario</p></div><span class="tag">DEMO MODE</span></div>
+        <div class="control-row">
+          <select id="scenario" aria-label="Test scenario">
+            <option value="normal">Normal operation</option>
+            <option value="sensor_spike">Sensor spike</option>
+            <option value="sensor_drift">Sensor drift</option>
+            <option value="sensor_frozen">Frozen sensor simulation</option>
+            <option value="vehicle_overheat">Possible vehicle overheating</option>
+            <option value="sensor_b">Legacy: sensor B fault</option>
+            <option value="all_disagree">Multiple sensor disagreement</option>
+          </select>
+          <button class="primary" id="execute">EXECUTE</button>
+        </div>
+        <div class="status-box">
+          <div class="status-title"><span class="status-light" id="statusLight"></span><span id="assessment">Awaiting telemetry</span></div>
+          <p id="explanation">Execute a scenario to inspect sensor agreement and the system assessment.</p>
+        </div>
+        <div class="stat-row"><span>Consensus</span><b id="consensusDetail">-- °C</b></div>
+        <div class="stat-row"><span>Flagged channels</span><b id="flaggedDetail">None</b></div>
+        <div class="stat-row"><span>Latest sample</span><b id="sampleTime">--:--:--</b></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h3>ML inference</h3><p>Model classification and output probabilities</p></div><span class="tag" id="mlTag">READY</span></div>
+        <div id="mlContent"><div class="empty">Run an analysis to request an ML prediction.</div></div>
+        <p class="notice">Model output is experimental and based on synthetic training data.</p>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div><h3>Event recorder</h3><p>Recent analysis results in this browser session</p></div><button id="clearEvents">Clear</button></div>
+        <div class="events" id="events"><div class="empty">No events recorded yet.</div></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="footer">
+    <span>TRUST-TWIN · SENSOR RELIABILITY PROTOTYPE</span>
+    <span id="platformFooter">Backend connection pending</span>
+    <span>SIMULATED DATA · NOT SAFETY-CERTIFIED</span>
+  </div>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const COLORS = ["#52d8f5", "#ffca72", "#b9a0ff"];
+  const NAMES = ["Engine Temperature A", "Engine Temperature B", "Engine Temperature C"];
+  const SHORT = ["A", "B", "C"];
+  const history = [];
+  const events = [];
+  let busy = false;
+  let liveMode = false;
+  let liveTimer = null;
+  let lastScenario = "normal";
+  let latestReadings = null;
+
+  const fmt = n => Number.isFinite(Number(n)) ? Number(n).toFixed(2) : "--";
+  const time = () => new Date().toLocaleTimeString([], {hour12:false});
+  $("clock").textContent = time();
+  setInterval(() => $("clock").textContent = time(), 1000);
+
+  function setHealth(ok, label) {
+    $("connection").textContent = label;
+    $("healthDot").style.background = ok ? "var(--green)" : "var(--red)";
+    $("healthDot").style.boxShadow = ok ? "0 0 12px #57e3a080" : "0 0 12px #ff718580";
+    $("platformFooter").textContent = ok ? "API connected · LinuxONE · s390x" : "API unavailable · check backend";
+  }
+
+  async function checkHealth() {
+    try {
+      const r = await fetch("/api/health", {cache:"no-store"});
+      if (!r.ok) throw new Error("Health check failed");
+      const d = await r.json();
+      setHealth(true, "SYSTEM ONLINE");
+      if (d.platform) $("platformFooter").textContent = d.platform + " · " + (d.architecture || "backend online");
+    } catch {
+      setHealth(false, "API OFFLINE");
+    }
+  }
+
+  function statusColor(status) {
+    if (/ANOMALY|DISAGREEMENT|UNCERTAIN|FAULT/i.test(status || "")) return "var(--red)";
+    if (/CONSENSUS|NORMAL/i.test(status || "")) return "var(--green)";
+    return "var(--amber)";
+  }
+
+  function renderDeviations(readings, deviations, flagged) {
+    $("deviationRows").innerHTML = NAMES.map((name, i) => {
+      const v = Number(readings[name]);
+      const dev = Number(deviations?.[name] ?? 0);
+      const isFlagged = (flagged || []).includes(name);
+      const width = Math.max(0, Math.min(100, dev / 20 * 100));
+      return `<div class="stat-row"><span>Channel ${SHORT[i]} · ${fmt(v)}°C</span><b style="color:${isFlagged ? "var(--red)" : "var(--text)"}">${fmt(dev)}°C ${isFlagged ? "⚠ FLAGGED" : ""}</b></div><div class="meter" style="margin:0 0 9px"><span style="width:${width}%;background:${isFlagged ? "var(--red)" : COLORS[i]}"></span></div>`;
+    }).join("");
+  }
+
+  function renderSensors(d) {
+  // Scenario analysis should not overwrite reasoning during live playback.
+  if (!liveMode && typeof window.trustTwinUpdateReasoning === 'function') {
+    window.trustTwinUpdateReasoning(d);
+  }
+
+    const readings = d.readings || {};
+    const trust = d.trust_scores || {};
+    const deviations = d.deviations_c || {};
+    const flagged = d.flagged_sensors || [];
+    latestReadings = readings;
+
+    NAMES.forEach((name, i) => {
+      const v = Number(readings[name]);
+      const t = Number(trust[name] ?? 0);
+      const fault = flagged.includes(name);
+      $("temp" + SHORT[i]).innerHTML = `${fmt(v)}<span class="unit"> °C</span>`;
+      $("trust" + SHORT[i]).textContent = `${fmt(t)}%`;
+      $("bar" + SHORT[i]).style.width = `${Math.max(0, Math.min(100, t))}%`;
+      $("card" + SHORT[i]).classList.toggle("fault", fault);
+      $("card" + SHORT[i]).querySelector(".sensor-icon").textContent = fault ? "⚠" : "◈";
+    });
+
+    $("kTemp").innerHTML = `${fmt(d.consensus_temperature)}<span class="unit"> °C</span>`;
+    $("kFlagged").textContent = `${flagged.length} / 3`;
+    $("consensusDetail").textContent = `${fmt(d.consensus_temperature)} °C`;
+    $("flaggedDetail").textContent = flagged.length ? flagged.map(n => n.replace("Engine Temperature ", "")).join(", ") : "None";
+    $("sampleTag").textContent = "SAMPLE " + String(history.length).padStart(3, "0");
+    $("sampleTime").textContent = time();
+    $("statusSub").textContent = d.scenario || lastScenario;
+    $("assessment").textContent = d.status || "UNKNOWN";
+    $("explanation").textContent = d.explanation || "No explanation returned by API.";
+    const color = statusColor(d.status);
+    $("kStatus").textContent = d.status || "UNKNOWN";
+    $("kStatus").style.color = color;
+    $("assessment").style.color = color;
+    $("statusLight").style.background = color;
+    $("statusLight").style.color = color;
+    $("statusLight").style.boxShadow = `0 0 13px ${color}`;
+    renderDeviations(readings, deviations, flagged);
+    renderTemporal(d);
+
+    history.push({
+      time: time(),
+      values: NAMES.map(n => Number(readings[n]))
+    });
+    if (history.length > 24) history.shift();
+    drawChart();
+  }
+
+  function renderTemporal(d) {
+    const count = Number(d.temporal_samples || 0);
+    const suspected = Boolean(d.frozen_sensor_suspected);
+    const isFrozenScenario = d.scenario === "sensor_frozen";
+
+    $("temporalCount").textContent = `${Math.min(count, 4)} / 4`;
+    $("temporalProgress").style.width = `${Math.min(100, count / 4 * 100)}%`;
+
+    if (suspected) {
+      $("temporalBadge").textContent = "SUSPECTED FREEZE";
+      $("temporalStatus").textContent = "Channel B";
+      $("temporalStatus").style.color = "var(--red)";
+      $("temporalProgress").style.background = "var(--red)";
+      $("temporalEvidence").textContent =
+        "Channel B remained unchanged across consecutive simulated samples while another channel varied. Temporal heuristic triggered.";
+    } else if (isFrozenScenario) {
+      $("temporalBadge").textContent = "MONITORING";
+      $("temporalStatus").textContent = "Collecting samples";
+      $("temporalStatus").style.color = "var(--amber)";
+      $("temporalProgress").style.background = "var(--amber)";
+      $("temporalEvidence").textContent =
+        `Sample ${count} of 4 collected. Channel B is held at a fixed simulated value; more consecutive samples are required.`;
+    } else {
+      $("temporalBadge").textContent = "AWAITING SAMPLES";
+      $("temporalStatus").textContent = "Not assessed";
+      $("temporalStatus").style.color = "var(--muted)";
+      $("temporalProgress").style.background = "var(--cyan)";
+      $("temporalEvidence").textContent =
+        "Choose Frozen sensor simulation and execute repeated samples to assess temporal stability.";
+    }
+  }
+
+  function drawChart() {
+    const canvas = $("chart");
+    const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    canvas.width = Math.round(rect.width * ratio);
+    canvas.height = Math.round(rect.height * ratio);
+    const ctx = canvas.getContext("2d");
+    ctx.scale(ratio, ratio);
+    const w = rect.width, h = rect.height;
+    const pad = {l:38, r:10, t:12, b:25};
+    const plotW = w-pad.l-pad.r, plotH = h-pad.t-pad.b;
+    ctx.clearRect(0,0,w,h);
+
+    const vals = history.flatMap(p => p.values).filter(Number.isFinite);
+    if (!vals.length) {
+      ctx.fillStyle = "#8799b0"; ctx.font = "12px Segoe UI";
+      ctx.fillText("Telemetry will appear after the first analysis.", 12, h/2);
+      return;
+    }
+    let min = Math.floor((Math.min(...vals)-3)/5)*5;
+    let max = Math.ceil((Math.max(...vals)+3)/5)*5;
+    if (max-min < 10) { min -= 5; max += 5; }
+    const x = i => pad.l + (history.length <= 1 ? plotW/2 : i/(history.length-1)*plotW);
+    const y = v => pad.t + (max-v)/(max-min)*plotH;
+
+    ctx.font = "10px Segoe UI";
+    for (let i=0;i<=4;i++) {
+      const v=min+(max-min)*i/4, yy=y(v);
+      ctx.strokeStyle="#223249"; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(pad.l,yy); ctx.lineTo(w-pad.r,yy); ctx.stroke();
+      ctx.fillStyle="#8799b0"; ctx.fillText(v.toFixed(0),2,yy+3);
+    }
+    COLORS.forEach((color, s) => {
+      ctx.strokeStyle=color; ctx.lineWidth=2; ctx.lineJoin="round";
+      ctx.beginPath();
+      history.forEach((p,i) => {
+        const px=x(i), py=y(p.values[s]);
+        if (i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      });
+      ctx.stroke();
+      const last=history[history.length-1];
+      if (last && Number.isFinite(last.values[s])) {
+        ctx.fillStyle=color; ctx.beginPath();
+        ctx.arc(x(history.length-1),y(last.values[s]),3.5,0,Math.PI*2);ctx.fill();
+      }
+    });
+    ctx.fillStyle="#8799b0";
+    ctx.fillText(history[0]?.time || "",pad.l,h-5);
+    const lastLabel=history[history.length-1]?.time || "";
+    const tw=ctx.measureText(lastLabel).width;
+    ctx.fillText(lastLabel,Math.max(pad.l,w-pad.r-tw),h-5);
+    $("chartHint").textContent = history.length + " samples";
+  }
+
+  function addEvent(d, error=false) {
+    const status = error ? "API ERROR" : (d.status || "ANALYSIS");
+    const level = error || /ANOMALY|DISAGREEMENT|UNCERTAIN|FAULT/i.test(status) ? "bad" :
+      /CONSENSUS|NORMAL/i.test(status) ? "" : "warn";
+    events.unshift({time:time(),status,detail:error ? String(d) : (d.explanation || d.scenario || "Analysis completed"),level});
+    if(events.length>30) events.pop();
+    renderEvents();
+  }
+
+  function renderEvents() {
+    if (!events.length) {
+      $("events").innerHTML = '<div class="empty">No events recorded yet.</div>';
+      return;
+    }
+    $("events").innerHTML = events.map(e =>
+      `<div class="event"><span class="event-mark ${e.level}"></span><div><strong>${escapeHtml(e.status)}</strong><p>${escapeHtml(e.detail)}</p></div><time>${escapeHtml(e.time)}</time></div>`
+    ).join("");
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  }
+
+  function showMLUnavailable(msg) {
+    $("kML").textContent = "N/A";
+    $("mlSub").textContent = "Inference unavailable";
+    $("mlTag").textContent = "UNAVAILABLE";
+    $("mlContent").innerHTML = `<div class="empty">${escapeHtml(msg)}</div>`;
+  }
+
+  function renderML(data) {
+    if (!data || typeof data !== "object") {
+      showMLUnavailable("No prediction data returned.");
+      return;
+    }
+    const probabilities = data.probabilities || data.class_probabilities || data.probs || data.scores || null;
+    const prediction = data.prediction || data.predicted_class || data.class_name || data.label || data.predicted_label || "Prediction returned";
+    $("kML").textContent = String(prediction).replaceAll("_"," ").toUpperCase();
+    $("kML").style.fontSize = String(prediction).length > 16 ? "16px" : "20px";
+    $("mlSub").textContent = data.accuracy != null ? `Reported test accuracy: ${fmt(Number(data.accuracy)*100)}%` : "Prototype model inference";
+    $("mlTag").textContent = "INFERENCE";
+    if (!probabilities || typeof probabilities !== "object") {
+      $("mlContent").innerHTML = `<div class="stat-row"><span>Predicted class</span><b>${escapeHtml(prediction)}</b></div><pre style="white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted);font-size:10px">${escapeHtml(JSON.stringify(data,null,2))}</pre>`;
+      return;
+    }
+    const entries = Object.entries(probabilities).map(([k,v]) => [k,Number(v)]).filter(([,v]) => Number.isFinite(v)).sort((a,b)=>b[1]-a[1]);
+    const max = Math.max(1,...entries.map(([,v])=>v));
+    $("mlContent").innerHTML = `<div class="stat-row"><span>Predicted class</span><b class="purple">${escapeHtml(String(prediction).replaceAll("_"," "))}</b></div>` + entries.map(([k,v]) => {
+      const percent = v <= 1 ? v*100 : v;
+      return `<div class="prob-row"><div class="prob-label"><span>${escapeHtml(k.replaceAll("_"," "))}</span><b>${percent.toFixed(1)}%</b></div><div class="prob-track"><span style="width:${Math.max(0,Math.min(100,percent))}%"></span></div></div>`;
+    }).join("");
+  }
+
+  async function runML(readings) {
+    if (!readings) return;
+    const params = new URLSearchParams({
+      temperature_a: String(readings[NAMES[0]]),
+      temperature_b: String(readings[NAMES[1]]),
+      temperature_c: String(readings[NAMES[2]])
+    });
+    try {
+      const r = await fetch("/api/ml-predict?" + params.toString(), {cache:"no-store"});
+      if (!r.ok) throw new Error("ML endpoint returned HTTP " + r.status);
+      renderML(await r.json());
+    } catch (e) {
+      showMLUnavailable(e.message + ". Sensor analysis is still available.");
+    }
+  }
+
+
+  // TRUST_TWIN_LIVE_PLAYBACK_V1
+  async function analyzePlayback() {
+    if (busy) return;
+    busy = true;
+    ["run", "execute", "refresh"].forEach(id => $(id).disabled = true);
+
+    try {
+      const response = await fetch("/api/telemetry/next", {
+        cache: "no-store"
+      });
+      if (!response.ok) {
+        throw new Error("Playback API returned HTTP " + response.status);
+      }
+
+      const packet = await response.json();
+      const playbackTemperatures = packet.temperatures_c || {};
+      if (typeof window.trustTwinUpdateReasoning === "function") {
+        window.trustTwinUpdateReasoning({
+          scenario: "playback",
+          status: "LIVE TELEMETRY",
+          readings: {
+            "Engine Temperature A": Number(playbackTemperatures.A),
+            "Engine Temperature B": Number(playbackTemperatures.B),
+            "Engine Temperature C": Number(playbackTemperatures.C)
+          },
+          flagged_sensors: [],
+          temporal_samples: null,
+          simulated: true,
+          explanation: "Live simulated playback sample " + packet.sample +
+            ". Frozen-sensor temporal detection is not evaluated in playback mode."
+        });
+      }
+      const t = packet.temperatures_c || {};
+      const values = [Number(t.A), Number(t.B), Number(t.C)];
+
+      if (!values.every(Number.isFinite)) {
+        throw new Error("Playback returned invalid sensor readings");
+      }
+
+      const sorted = [...values].sort((a, b) => a - b);
+      const median = sorted[1];
+      const names = NAMES;
+      const readings = {};
+      const deviations = {};
+      const trust = {};
+      const flagged = [];
+
+      names.forEach((name, i) => {
+        readings[name] = values[i];
+        deviations[name] = Math.abs(values[i] - median);
+        trust[name] = 100 * Math.exp(-deviations[name] / 5);
+        if (deviations[name] > 8) flagged.push(name);
+      });
+
+      let status = "CONSENSUS";
+      let explanation =
+        "Simulated telemetry channels are within the demonstration thresholds.";
+
+      if (median >= 105) {
+        status = "POSSIBLE VEHICLE ANOMALY";
+        explanation =
+          "The median simulated temperature is elevated. This is a demonstration threshold, not a real vehicle safety diagnosis.";
+      } else if (flagged.length > 0) {
+        status = "SENSOR DISAGREEMENT";
+        explanation =
+          "One or more simulated channels differ from the median by more than 8°C.";
+      }
+
+      const d = {
+        simulated: true,
+        scenario: "playback",
+        sample: packet.sample,
+        temporal_samples: 0,
+        frozen_sensor_suspected: false,
+        readings,
+        consensus_temperature: median,
+        deviations_c: deviations,
+        trust_scores: trust,
+        flagged_sensors: flagged,
+        status,
+        explanation: explanation +
+          " Playback sample " + packet.sample +
+          "; all readings are synthetic."
+      };
+
+      renderSensors(d);
+      if (typeof window.trustTwinUpdateReasoning === "function") {
+        window.trustTwinUpdateReasoning(d);
+      }
+      addEvent(d);
+      await runML(readings);
+      setHealth(true, "SYSTEM ONLINE");
+    } catch (error) {
+      $("assessment").textContent = "PLAYBACK FAILED";
+      $("explanation").textContent = error.message;
+      setHealth(false, "PLAYBACK API ERROR");
+    } finally {
+      busy = false;
+      ["run", "execute", "refresh"].forEach(id => $(id).disabled = false);
+    }
+  }
+
+  async function analyze() {
+    if (busy) return;
+    busy = true;
+    ["run","execute","refresh"].forEach(id => $(id).disabled=true);
+    $("assessment").textContent = "ANALYZING TELEMETRY…";
+    try {
+      lastScenario = $("scenario").value;
+      const r = await fetch("/api/analyze?fault=" + encodeURIComponent(lastScenario), {cache:"no-store"});
+      if (!r.ok) throw new Error("Analysis API returned HTTP " + r.status);
+      const d = await r.json();
+      renderSensors(d);
+      if (!liveMode && typeof window.trustTwinUpdateReasoning === "function") {
+        window.trustTwinUpdateReasoning(d);
+      }
+      addEvent(d);
+      await runML(d.readings);
+      setHealth(true,"SYSTEM ONLINE");
+    } catch(e) {
+      $("assessment").textContent = "ANALYSIS FAILED";
+      $("explanation").textContent = e.message + ". Check that the backend server is running.";
+      addEvent(e.message,true);
+      setHealth(false,"API ERROR");
+    } finally {
+      busy = false;
+      ["run","execute","refresh"].forEach(id => $(id).disabled=false);
+    }
+  }
+
+  $("run").addEventListener("click",analyze);
+  $("execute").addEventListener("click",analyze);
+  $("refresh").addEventListener("click",analyze);
+
+  function stopLiveMode() {
+    liveMode = false;
+    if (liveTimer !== null) {
+      clearInterval(liveTimer);
+      liveTimer = null;
+    }
+    $("liveToggle").textContent = "▶ Start live mode";
+    $("liveToggle").classList.remove("active");
+    $("liveDot").classList.remove("active");
+  }
+
+  function startLiveMode() {
+    if (liveMode) return;
+    liveMode = true;
+    $("liveToggle").textContent = "Ⅱ Pause live mode";
+    $("liveToggle").classList.add("active");
+    $("liveDot").classList.add("active");
+    analyzePlayback();
+    liveTimer = setInterval(() => {
+      if (!busy && liveMode) analyzePlayback();
+    }, 1000);
+  }
+
+  $("liveToggle").addEventListener("click", () => {
+    if (liveMode) stopLiveMode();
+    else startLiveMode();
+  });
+  $("resetDemo").addEventListener("click", async () => {
+    const button = $("resetDemo");
+    button.disabled = true;
+    stopLiveMode();
+
+    try {
+      const response = await fetch("/api/telemetry/reset", {
+        method: "POST"
+      });
+
+      if (!response.ok) {
+        throw new Error("HTTP " + response.status);
+      }
+
+      await response.json();
+
+      if (Array.isArray(history)) history.length = 0;
+      drawChart();
+
+      button.textContent = "Resetting...";
+      startLiveMode();
+
+      setTimeout(() => {
+        button.textContent = "↺ Reset demo";
+      }, 1800);
+    } catch (error) {
+      console.error("Reset Demo failed:", error);
+      button.textContent = "Reset failed";
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+
+  window.addEventListener("beforeunload", stopLiveMode);
+  $("scenario").addEventListener("change",() => {
+    $("statusSub").textContent = "Selected: " + $("scenario").selectedOptions[0].text;
+  });
+  $("clearEvents").addEventListener("click",() => {
+    events.length=0;
+    renderEvents();
+  });
+  window.addEventListener("resize",drawChart);
+
+  checkHealth();
+  setInterval(checkHealth,15000);
+  drawChart();
+  analyze();
+})();
+</script>
+
+<section id="ttReasoningPanel"
+ style="margin:20px 0;padding:20px;border:1px solid #263b50;
+ border-radius:14px;background:#0b1420;color:#e5edf7">
+ <div style="display:flex;justify-content:space-between;align-items:center;
+ gap:12px;flex-wrap:wrap">
+  <div>
+   <h2 style="margin:0 0 5px;font-size:19px">AI Reasoning</h2>
+   <p style="margin:0;color:#8fa6bd;font-size:12px">
+    Evidence-based explanation of the current simulated assessment
+   </p>
+  </div>
+  <span id="ttReasoningStatus" style="font-size:11px;color:#43c9f5">
+   AWAITING ANALYSIS
+  </span>
+ </div>
+ <div id="ttReasoningEvidence"
+ style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+ gap:12px;margin-top:16px">
+  <div style="padding:14px;border:1px solid #263b50;border-radius:10px">
+   <div style="font-size:11px;color:#8fa6bd">ASSESSMENT</div>
+   <strong id="ttReasoningAssessment">Awaiting analysis</strong>
+  </div>
+  <div style="padding:14px;border:1px solid #263b50;border-radius:10px">
+   <div style="font-size:11px;color:#8fa6bd">SENSOR AGREEMENT</div>
+   <strong id="ttReasoningAgreement">Awaiting readings</strong>
+  </div>
+  <div style="padding:14px;border:1px solid #263b50;border-radius:10px">
+   <div style="font-size:11px;color:#8fa6bd">TEMPORAL CHECK</div>
+   <strong id="ttReasoningTemporal">Awaiting samples</strong>
+  </div>
+ </div>
+ <p id="ttReasoningExplanation"
+ style="margin:16px 0 0;font-size:13px;line-height:1.7;color:#c3d2e2">
+ Run an analysis to see the available evidence and its interpretation.
+ </p>
+ <p style="font-size:11px;line-height:1.6;color:#8fa6bd;margin:12px 0 0">
+ This explanation uses available simulation results and rule-based evidence.
+ It is not a causal explanation of the ML model or a safety certification.
+ </p>
+</section>
+
+<script>
+(function () {
+  const $ = id => document.getElementById(id);
+
+  window.trustTwinUpdateReasoning = function (data) {
+    if (!data || typeof data !== "object") return;
+
+    const raw = data.readings || data.temperatures_c || data.sensors || {};
+    const values = [
+      Number(raw["Engine Temperature A"] ?? raw.A),
+      Number(raw["Engine Temperature B"] ?? raw.B),
+      Number(raw["Engine Temperature C"] ?? raw.C)
+    ];
+    const valid = values.filter(Number.isFinite);
+    const sorted = [...valid].sort((a, b) => a - b);
+    const median = sorted.length
+      ? sorted[Math.floor(sorted.length / 2)]
+      : null;
+
+    const status = data.status || data.assessment || "TELEMETRY RECEIVED";
+    const flagged = Array.isArray(data.flagged_sensors)
+      ? data.flagged_sensors
+      : [];
+
+    const statusNode = document.getElementById("ttReasoningStatus");
+    const assessmentNode = document.getElementById("ttReasoningAssessment");
+    const agreementNode = document.getElementById("ttReasoningAgreement");
+    const temporalNode = document.getElementById("ttReasoningTemporal");
+    const explanationNode = document.getElementById("ttReasoningExplanation");
+
+    if (statusNode) statusNode.textContent = "ANALYSIS UPDATED";
+    if (assessmentNode) assessmentNode.textContent = status;
+
+    if (agreementNode) {
+      agreementNode.textContent = valid.length === 3
+        ? (flagged.length ? "Sensor disagreement detected" : "3 sensor readings received")
+        : valid.length + " sensor reading(s) received";
+    }
+
+    if (temporalNode) {
+      temporalNode.textContent = data.frozen_sensor_suspected
+        ? "Possible frozen sensor"
+        : data.temporal_samples != null
+          ? data.temporal_samples + " temporal samples"
+          : "Not assessed for playback";
+    }
+
+    const explanation = [];
+    if (valid.length) {
+      explanation.push("Available readings: " + values.map((v, i) =>
+        "Sensor " + ["A", "B", "C"][i] + "=" +
+        (Number.isFinite(v) ? v.toFixed(2) + " °C" : "unavailable")
+      ).join(", ") + ".");
+
+      if (median !== null) {
+        explanation.push("Median of available readings: " +
+          median.toFixed(2) + " °C.");
+      }
+    } else {
+      explanation.push("No recognizable sensor readings were received.");
+    }
+
+    explanation.push(flagged.length
+      ? "Flagged sensors: " + flagged.join(", ") + "."
+      : "No sensors were flagged in this response.");
+
+    if (data.explanation) explanation.push(data.explanation);
+    explanation.push("Synthetic demonstration only; not a real-vehicle safety diagnosis.");
+
+    if (explanationNode) {
+      explanationNode.textContent = status + ". " + explanation.join(" ");
+    }
+  };
+})();
+</script>
+
+
+<section id="ttPlaybackPanel" style="margin:20px 0;padding:20px;border:1px solid #34445b;border-radius:12px;background:#101a29;color:#e8f0fa;font-family:inherit">
+  <h2 style="margin:0 0 8px">LIVE TELEMETRY PLAYBACK</h2>
+  <p style="color:#9eb0c7">Synthetic demonstration data · Not connected to a real vehicle</p>
+  <button id="ttPlaybackToggle" type="button" style="padding:10px 18px;cursor:pointer">▶ Start playback</button>
+  <span id="ttPlaybackStatus" style="margin-left:12px">PAUSED</span>
+  <div id="ttPlaybackReadings" style="display:flex;gap:14px;flex-wrap:wrap;margin-top:18px">
+    <div>Sensor A: <strong id="ttPlaybackA">—</strong> °C</div>
+    <div>Sensor B: <strong id="ttPlaybackB">—</strong> °C</div>
+    <div>Sensor C: <strong id="ttPlaybackC">—</strong> °C</div>
+  </div>
+  <p id="ttPlaybackSample" style="color:#9eb0c7">Waiting for playback</p>
+</section>
+<script>
+(() => {
+  const button = document.getElementById("ttPlaybackToggle");
+  const status = document.getElementById("ttPlaybackStatus");
+  const sample = document.getElementById("ttPlaybackSample");
+  let timer = null;
+  let busy = false;
+
+  async function step() {
+    if (busy) return;
+    busy = true;
+    try {
+      const response = await fetch("/api/telemetry/next", {cache:"no-store"});
+      if (!response.ok) throw new Error("HTTP " + response.status);
+      const data = await response.json();
+      const t = data.temperatures_c || {};
+      for (const key of ["A", "B", "C"]) {
+        const node = document.getElementById("ttPlayback" + key);
+        if (node && Number.isFinite(Number(t[key]))) {
+          node.textContent = Number(t[key]).toFixed(2);
+        }
+      }
+      sample.textContent =
+        "Sample " + data.sample + " · " +
+        new Date(data.timestamp).toLocaleTimeString() +
+        " · SIMULATED";
+      status.textContent = "PLAYING";
+    } catch (error) {
+      status.textContent = "API ERROR";
+      sample.textContent = error.message;
+      stop();
+    } finally {
+      busy = false;
+    }
+  }
+
+  function stop() {
+    if (timer !== null) clearInterval(timer);
+    timer = null;
+    button.textContent = "▶ Start playback";
+    if (status.textContent !== "API ERROR") status.textContent = "PAUSED";
+  }
+
+  button.addEventListener("click", () => {
+    if (timer !== null) {
+      stop();
+    } else {
+      button.textContent = "Ⅱ Pause playback";
+      step();
+      timer = setInterval(step, 1000);
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
